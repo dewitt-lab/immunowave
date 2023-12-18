@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+# this allows dependencies to be specified with a url
+allow-direct-references = true
+
+[project]
+name = "Immunowave"
+authors = [
+  { name="William DeWitt", email="wsdewitt@gmail.com" },
+  { name="Brandon Schlomann", email="bhschlomann@gmail.com" },
+  { name="Kasturi Shah", email="ks7@mit.edu" },
+  { name="Yuanzhao Zhang", email="zhangyuanzhao45@gmail.com" },
+]
+description = "Dynamical models for multi-scale immune responses"
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dynamic = [
+  "version"
+]
+dependencies = [
+  "jaxlib",
+  "jax",
+  "diffrax",
+  "matplotlib",
+  "numpy",
+]
+
+[project.optional-dependencies]
+dev = [
+  "black[jupyter]",
+  "docformatter",
+  "flake8",
+  "pytest",
+  "nbval",
+  "sphinx",
+  "sphinx-argparse",
+  "sphinx-autodoc-typehints",
+  "sphinx-copybutton",
+  "furo",
+  "myst-nb",
+  "pandoc",
+  "jupyter",
+  "seaborn",
+]
+
+[tool.hatch.version]
+path = "immunowave/__init__.py"
+
+[project.urls]
+"Homepage" = "https://github.com/WSDeWitt/immunowave"
+"Bug Tracker" = "https://github.com/WSDeWitt/immunowave/issues"
+"Documentation" = "https://wsdewitt.github.io/immunowave"
