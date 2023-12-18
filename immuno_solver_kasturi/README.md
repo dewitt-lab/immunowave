@@ -2,6 +2,7 @@
 Written by Kasturi Shah
 
 First upload: 18 December 2023
+
 Last updated: 18 December 2023
 
 My Python code solves model #4 (equations 10) and model #5 (equations 11) in outline.tex in our shared Overleaf. The boolean variable AB_withR allows a user to toggle between model #4 and #5 by simply changing it to True to run #5 instead of #4. Boundary conditions are Neumann on LHS and RHS. 
