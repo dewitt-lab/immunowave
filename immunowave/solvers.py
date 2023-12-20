@@ -1,9 +1,11 @@
-r"""PDE solvers."""
+r"""Spatial PDE solvers."""
 
-import equinox as eqx
 import diffrax as dx
 import jax
 import jax.numpy as jnp
+from jaxtyping import Scalar, PyTree
+import jax.tree_util as jtu
+from immunowave import spatial, term
 
 
 class CrankNicolson(dx.AbstractSolver):
@@ -18,6 +20,7 @@ class CrankNicolson(dx.AbstractSolver):
     rtol: float
     atol: float
 
+    # term_structure = term.PDETerm
     term_structure = dx.ODETerm
     interpolation_cls = dx.LocalLinearInterpolation
 
@@ -38,14 +41,37 @@ class CrankNicolson(dx.AbstractSolver):
 
         def fixed_point_iteration(val):
             y1, _ = val
-            new_y1 = y0 + 0.5 * δt * (f0 + terms.vf(t1, y1, args))
-            diff = jnp.abs((new_y1 - y1).values)
-            max_y1 = jnp.maximum(jnp.abs(y1.values), jnp.abs(new_y1.values))
-            scale = self.atol + self.rtol * max_y1
-            not_converged = jnp.any(diff > scale)
+            new_y1 = spatial._field_map(
+                lambda y0, f0, flow1: y0 + 0.5 * δt * (f0 + flow1),
+                y0,
+                f0,
+                terms.vf(t1, y1, args),
+            )
+            diff = spatial._field_map(
+                lambda new_y1, y1: (new_y1 - y1).abs(), new_y1, y1
+            )
+            max_y1 = spatial._field_map(
+                lambda y1, new_y1: y1.abs().binop(new_y1.abs(), jnp.maximum),
+                y1,
+                new_y1,
+            )
+            scale = spatial._field_map(
+                lambda max_y1: self.atol + self.rtol * max_y1, max_y1
+            )
+            print(
+                spatial._field_map(
+                    lambda diff, scale: jnp.all(diff.values < scale.values), diff, scale
+                )
+            )
+            not_converged = not jtu.tree_all(
+                spatial._field_map(
+                    lambda diff, scale: jnp.all(diff.values < scale.values), diff, scale
+                )
+            )
+            print(not_converged)
             return new_y1, not_converged
 
-        euler_y1 = y0 + δt * f0
+        euler_y1 = spatial._field_map(lambda y0, f0: y0 + δt * f0, y0, f0)
         y1, _ = jax.lax.while_loop(
             keep_iterating, fixed_point_iteration, (euler_y1, False)
         )

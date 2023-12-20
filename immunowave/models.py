@@ -1,14 +1,15 @@
 r"""Dynamical models."""
 
 import abc
-from typing import Any, Optional
+from typing import Any
 from jaxtyping import PyTree, Float, Array
 import diffrax as dx
 import equinox as eqx
+import jax.tree_util as jtu
 import jax.numpy as jnp
 from jax.config import config
 
-from immunowave import spatial, solvers
+from immunowave import spatial, solvers, term
 
 config.update("jax_enable_x64", True)
 
@@ -16,10 +17,15 @@ config.update("jax_enable_x64", True)
 class Model(eqx.Module, abc.ABC):
     r"""Abstract base class for dynamical models."""
 
+    @property
+    @abc.abstractmethod
+    def n_components(self) -> int:
+        r"""Number of dynamical variables."""
+
     @abc.abstractmethod
     def __call__(
-        self, t: float, state: PyTree[spatial.GridFn, "N"], args: Any
-    ) -> PyTree[spatial.GridFn, "N"]:
+        self, t: float, state: PyTree[spatial.ScalarField, " n_components"], args: Any
+    ) -> PyTree[spatial.ScalarField, " n_components"]:
         r"""Evaluate the right-hand side of the dynamical equation.
 
         Args:
@@ -33,54 +39,58 @@ class Model(eqx.Module, abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def boundary_metric(state: PyTree[spatial.GridFn, "N"]) -> float:
+    def boundary_metric(state: PyTree[spatial.ScalarField, " n_components"]) -> float:
         r"""Compute a metric on the boundary of the domain.
 
         Args:
             state: State of the system.
         """
 
-    # @jax.jit
-    def solve(
-        self,
-        state: PyTree[spatial.GridFn, "N"],
-        t: Float[Array, " k"],
-        rtol: float = 1e-8,
-        atol: float = 1e-8,
-        **kwargs: Any,
-    ) -> dx.Solution:
-        r"""Solve the dynamical system.
+    # # @jax.jit
+    # def solve(
+    #     self,
+    #     state: PyTree[spatial.ScalarField, " n_components"],
+    #     t: Float[Array, " k"],
+    #     rtol: float = 1e-8,
+    #     atol: float = 1e-8,
+    #     boundary_threshold: float = 1e-3,
+    #     **kwargs: Any,
+    # ) -> dx.Solution:
+    #     r"""Solve the dynamical system.
 
-        Args:
-            model: Immune respone model.
-            state: Initial condition Pytree.
-            t: Times to evaluate the solution at.
-            rtol: Relative tolerance.
-            atol: Absolute tolerance.
-            **kwargs: Additional keyword arguments to pass to ``diffrax.diffeqsolve``.
+    #     Args:
+    #         model: Immune respone model.
+    #         state: Initial condition Pytree.
+    #         t: Times to evaluate the solution at.
+    #         rtol: Relative tolerance.
+    #         atol: Absolute tolerance.
+    #         boundary_threshold: Threshold for the boundary metric.
+    #         **kwargs: Additional keyword arguments to pass to ``diffrax.diffeqsolve``.
 
-        Returns:
-            Solution. If ``t`` is ``None``, the solution can evaluated densely via the ``evaluate()`` method.
-            Otherwise, the solution at the time points ``t`` is accessible via the ``ys`` attribute.
-        """
-        stepsize_controller = dx.PIDController(
-            pcoeff=0.3, icoeff=0.4, rtol=rtol, atol=atol, dtmax=0.001
-        )
-        solver = solvers.CrankNicolson(rtol=rtol, atol=atol)
-        discrete_terminating_event = dx.DiscreteTerminatingEvent(
-            lambda t, y, args: self.boundary_metric(y) > 1e-3
-        )
-        return dx.diffeqsolve(
-            dx.ODETerm(self),
-            solver,
-            t[0],
-            t[-1],
-            discrete_terminating_event=discrete_terminating_event,
-            y0=state,
-            **kwargs,
-            saveat=dx.SaveAt(ts=t),
-            stepsize_controller=stepsize_controller,
-        )
+    #     Returns:
+    #         Solution. If ``t`` is ``None``, the solution can evaluated densely via the
+    #         ``evaluate()`` method. Otherwise, the solution at the time points ``t`` is
+    #         accessible via the ``ys`` attribute.
+    #     """
+    #     stepsize_controller = dx.PIDController(
+    #         pcoeff=0.3, icoeff=0.4, rtol=rtol, atol=atol, dtmax=0.001
+    #     )
+    #     solver = solvers.CrankNicolson(rtol=rtol, atol=atol)
+    #     discrete_terminating_event = dx.DiscreteTerminatingEvent(
+    #         lambda t, y, args: self.boundary_metric(y) > boundary_threshold
+    #     )
+    #     return dx.diffeqsolve(
+    #         # term.PDETerm(self),
+    #         dx.ODETerm(self),
+    #         solver,
+    #         t[0],
+    #         t[-1],
+    #         discrete_terminating_event=discrete_terminating_event,
+    #         y0=state,
+    #         **kwargs,
+    #         saveat=dx.SaveAt(ts=t),
+    #         stepsize_controller=stepsize_controller,
+    #     )
 
 
 class FHNB(Model):
@@ -95,6 +105,15 @@ class FHNB(Model):
         \partial_t B &=& \xi \nabla^2 B + \lambda B (1-B) - \mu A B
         \end{align*}
 
+    Args:
+        α: Diffusion coefficient of antimicrobial peptide.
+        θ: Threshold for antimicrobial peptide production.
+        η: Rate of antimicrobial peptide growth response to bacteria.
+        ρ: Rate of antimicrobial peptide degradation response to repression.
+        ε: Rate of repression production.
+        ξ: Diffusion coefficient of bacteria.
+        λ: Rate of bacteria growth.
+        μ: Rate of bacteria death response to antimicrobial peptide.
     """
     α: float
     θ: float
@@ -104,13 +123,14 @@ class FHNB(Model):
     ξ: float
     λ: float
     μ: float
+    n_components: int = 3
 
     def __call__(
         self,
         t: float,
-        state: jnp.ndarray,  # NOTE: bad typehint
-        args,
-    ) -> jnp.ndarray:  # NOTE: bad typehint
+        state: PyTree[spatial.ScalarField, " n_components"],
+        args: None = None,
+    ) -> PyTree[spatial.ScalarField, " n_components"]:
         r"""Evaluate the right-hand side of the dynamical equation.
 
         Args:
@@ -121,7 +141,7 @@ class FHNB(Model):
         Returns:
             :math:`\partial_t A`, :math:`\partial_t R`, :math:`\partial_t B`.
         """
-        A, R, B = state
+        A, R, B = spatial._field_leaves(state)
         dAdt = (
             self.α * A.laplacian(bc="neumann")
             + A * (A - self.θ) * (1 - A)
@@ -133,10 +153,11 @@ class FHNB(Model):
             self.ξ * B.laplacian(bc="neumann") + self.λ * B * (1 - B) - self.μ * A * B
         )
 
-        return dAdt, dRdt, dBdt
+        return jtu.build_tree(spatial._field_structure(state), (dAdt, dRdt, dBdt))
 
+    # NOTE: 1d only
     @staticmethod
-    def boundary_metric(state: jnp.ndarray):  # NOTE: bad typehint
+    def boundary_metric(state: PyTree[spatial.ScalarField, " n_components"]) -> float:
         r"""Maximum antimicrobial peptide concentration on the boundary.
 
         Args:
