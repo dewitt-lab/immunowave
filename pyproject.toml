@@ -60,5 +60,8 @@ path = "immunowave/__init__.py"
 "Bug Tracker" = "https://github.com/WSDeWitt/immunowave/issues"
 "Documentation" = "https://wsdewitt.github.io/immunowave"
 
+[tool.black]
+extend-exclude = "immuno_solver_kasturi"
+
 # [tool.pytest.ini_options]
 # addopts = "--jaxtyping-packages=immunowave,beartype.beartype"

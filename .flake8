@@ -7,3 +7,4 @@ exclude =
     .vscode,
     .conda,
     __pycache__
+    immuno_solver_kasturi
