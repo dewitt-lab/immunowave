@@ -61,7 +61,13 @@ path = "immunowave/__init__.py"
 "Documentation" = "https://wsdewitt.github.io/immunowave"
 
 [tool.black]
-extend-exclude = "immuno_solver_kasturi"
+extend-exclude = '''
+/(
+    | immuno_solver_kasturi
+    | ^.+\.ipynb$
+)/
+'''
+
 
 # [tool.pytest.ini_options]
 # addopts = "--jaxtyping-packages=immunowave,beartype.beartype"
