@@ -3,9 +3,8 @@ r"""Spatial PDE solvers."""
 import diffrax as dx
 import jax
 import jax.numpy as jnp
-from jaxtyping import Scalar, PyTree
 import jax.tree_util as jtu
-from immunowave import spatial, term
+from immunowave import spatial
 
 
 class CrankNicolson(dx.AbstractSolver):
@@ -20,7 +19,6 @@ class CrankNicolson(dx.AbstractSolver):
     rtol: float
     atol: float
 
-    # term_structure = term.PDETerm
     term_structure = dx.ODETerm
     interpolation_cls = dx.LocalLinearInterpolation
 
@@ -47,28 +45,26 @@ class CrankNicolson(dx.AbstractSolver):
                 f0,
                 terms.vf(t1, y1, args),
             )
-            diff = spatial._field_map(
-                lambda new_y1, y1: (new_y1 - y1).abs(), new_y1, y1
-            )
+            diff = spatial._field_map(lambda new_y1, y1: abs(new_y1 - y1), new_y1, y1)
             max_y1 = spatial._field_map(
-                lambda y1, new_y1: y1.abs().binop(new_y1.abs(), jnp.maximum),
+                lambda y1, new_y1: abs(y1).binop(abs(new_y1), jnp.maximum),
                 y1,
                 new_y1,
             )
             scale = spatial._field_map(
                 lambda max_y1: self.atol + self.rtol * max_y1, max_y1
             )
-            print(
-                spatial._field_map(
-                    lambda diff, scale: jnp.all(diff.values < scale.values), diff, scale
+            not_converged = jnp.any(
+                jnp.asarray(
+                    jtu.tree_leaves(
+                        spatial._field_map(
+                            lambda diff, scale: jnp.all(diff.values > scale.values),
+                            diff,
+                            scale,
+                        )
+                    )
                 )
             )
-            not_converged = not jtu.tree_all(
-                spatial._field_map(
-                    lambda diff, scale: jnp.all(diff.values < scale.values), diff, scale
-                )
-            )
-            print(not_converged)
             return new_y1, not_converged
 
         euler_y1 = spatial._field_map(lambda y0, f0: y0 + δt * f0, y0, f0)
@@ -76,7 +72,7 @@ class CrankNicolson(dx.AbstractSolver):
             keep_iterating, fixed_point_iteration, (euler_y1, False)
         )
 
-        y_error = y1 - euler_y1
+        y_error = spatial._field_map(lambda x, y: x - y, y1, euler_y1)
         dense_info = dict(y0=y0, y1=y1)
 
         solver_state = None

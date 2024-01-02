@@ -1,15 +1,15 @@
 r"""Dynamical models."""
 
-import abc
-from typing import Any
-from jaxtyping import PyTree, Float, Array
+import numpy as np
 import diffrax as dx
 import equinox as eqx
+import abc
+from typing import Any
+from jaxtyping import PyTree, Float
 import jax.tree_util as jtu
-import jax.numpy as jnp
 from jax.config import config
 
-from immunowave import spatial, solvers, term
+from immunowave import spatial, solvers
 
 config.update("jax_enable_x64", True)
 
@@ -46,51 +46,50 @@ class Model(eqx.Module, abc.ABC):
             state: State of the system.
         """
 
-    # # @jax.jit
-    # def solve(
-    #     self,
-    #     state: PyTree[spatial.ScalarField, " n_components"],
-    #     t: Float[Array, " k"],
-    #     rtol: float = 1e-8,
-    #     atol: float = 1e-8,
-    #     boundary_threshold: float = 1e-3,
-    #     **kwargs: Any,
-    # ) -> dx.Solution:
-    #     r"""Solve the dynamical system.
+    # @jax.jit
+    def solve(
+        self,
+        state: PyTree[spatial.ScalarField, " n_components"],
+        t: Float[np.ndarray, " k"],
+        rtol: float = 1e-8,
+        atol: float = 1e-8,
+        boundary_threshold: float = 1e-3,
+        **kwargs: Any,
+    ) -> dx.Solution:
+        r"""Solve the dynamical system.
 
-    #     Args:
-    #         model: Immune respone model.
-    #         state: Initial condition Pytree.
-    #         t: Times to evaluate the solution at.
-    #         rtol: Relative tolerance.
-    #         atol: Absolute tolerance.
-    #         boundary_threshold: Threshold for the boundary metric.
-    #         **kwargs: Additional keyword arguments to pass to ``diffrax.diffeqsolve``.
+        Args:
+            model: Immune respone model.
+            state: Initial condition Pytree.
+            t: Times to evaluate the solution at.
+            rtol: Relative tolerance.
+            atol: Absolute tolerance.
+            boundary_threshold: Threshold for the boundary metric.
+            **kwargs: Additional keyword arguments to pass to ``diffrax.diffeqsolve``.
 
-    #     Returns:
-    #         Solution. If ``t`` is ``None``, the solution can evaluated densely via the
-    #         ``evaluate()`` method. Otherwise, the solution at the time points ``t`` is
-    #         accessible via the ``ys`` attribute.
-    #     """
-    #     stepsize_controller = dx.PIDController(
-    #         pcoeff=0.3, icoeff=0.4, rtol=rtol, atol=atol, dtmax=0.001
-    #     )
-    #     solver = solvers.CrankNicolson(rtol=rtol, atol=atol)
-    #     discrete_terminating_event = dx.DiscreteTerminatingEvent(
-    #         lambda t, y, args: self.boundary_metric(y) > boundary_threshold
-    #     )
-    #     return dx.diffeqsolve(
-    #         # term.PDETerm(self),
-    #         dx.ODETerm(self),
-    #         solver,
-    #         t[0],
-    #         t[-1],
-    #         discrete_terminating_event=discrete_terminating_event,
-    #         y0=state,
-    #         **kwargs,
-    #         saveat=dx.SaveAt(ts=t),
-    #         stepsize_controller=stepsize_controller,
-    #     )
+        Returns:
+            Solution. If ``t`` is ``None``, the solution can evaluated densely via the
+            ``evaluate()`` method. Otherwise, the solution at the time points ``t`` is
+            accessible via the ``ys`` attribute.
+        """
+        stepsize_controller = dx.PIDController(
+            pcoeff=0.3, icoeff=0.4, rtol=rtol, atol=atol, dtmax=0.001
+        )
+        solver = solvers.CrankNicolson(rtol=rtol, atol=atol)
+        # discrete_terminating_event = dx.DiscreteTerminatingEvent(
+        #     lambda t, y, args: self.boundary_metric(y) > boundary_threshold
+        # )
+        return dx.diffeqsolve(
+            dx.ODETerm(self),
+            solver,
+            t[0],
+            t[-1],
+            # discrete_terminating_event=discrete_terminating_event,
+            y0=state,
+            **kwargs,
+            saveat=dx.SaveAt(ts=t),
+            stepsize_controller=stepsize_controller,
+        )
 
 
 class FHNB(Model):

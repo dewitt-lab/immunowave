@@ -49,6 +49,7 @@ dev = [
   "pandoc",
   "jupyter",
   "seaborn",
+  "beartype",
 ]
 
 [tool.hatch.version]
@@ -58,3 +59,6 @@ path = "immunowave/__init__.py"
 "Homepage" = "https://github.com/WSDeWitt/immunowave"
 "Bug Tracker" = "https://github.com/WSDeWitt/immunowave/issues"
 "Documentation" = "https://wsdewitt.github.io/immunowave"
+
+# [tool.pytest.ini_options]
+# addopts = "--jaxtyping-packages=immunowave,beartype.beartype"
