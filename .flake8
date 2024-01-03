@@ -7,4 +7,7 @@ exclude =
     .vscode,
     .conda,
     __pycache__
-    immuno_solver_kasturi
+filename = 
+    immunowave
+    tests
+    notebooks

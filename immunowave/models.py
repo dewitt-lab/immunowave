@@ -8,6 +8,8 @@ from typing import Any
 from jaxtyping import PyTree, Float
 import jax.tree_util as jtu
 from jax.config import config
+import matplotlib.pyplot as plt
+import dataclasses as dc
 
 from immunowave import spatial, solvers
 
@@ -17,11 +19,6 @@ config.update("jax_enable_x64", True)
 class Model(eqx.Module, abc.ABC):
     r"""Abstract base class for dynamical models."""
 
-    @property
-    @abc.abstractmethod
-    def n_components(self) -> int:
-        r"""Number of dynamical variables."""
-
     @abc.abstractmethod
     def __call__(
         self, t: float, state: PyTree[spatial.ScalarField, " n_components"], args: Any
@@ -30,7 +27,7 @@ class Model(eqx.Module, abc.ABC):
 
         Args:
             t: Time.
-            state: State of the system.
+            state: State of the system, as :py:class:`eqx.Module` of :py:class:`spatial.ScalarField` fields.
             args: Additional arguments.
 
         Returns:
@@ -43,7 +40,7 @@ class Model(eqx.Module, abc.ABC):
         r"""Compute a metric on the boundary of the domain.
 
         Args:
-            state: State of the system.
+            state: State of the system, as :py:class:`eqx.Module` of :py:class:`spatial.ScalarField` fields.
         """
 
     # @jax.jit
@@ -54,17 +51,19 @@ class Model(eqx.Module, abc.ABC):
         rtol: float = 1e-8,
         atol: float = 1e-8,
         boundary_threshold: float = 1e-3,
+        dt0: float | None = None,
         **kwargs: Any,
     ) -> dx.Solution:
         r"""Solve the dynamical system.
 
         Args:
             model: Immune respone model.
-            state: Initial condition Pytree.
+            state: Initial condition, as :py:class:`eqx.Module` of :py:class:`spatial.ScalarField` fields.
             t: Times to evaluate the solution at.
             rtol: Relative tolerance.
             atol: Absolute tolerance.
             boundary_threshold: Threshold for the boundary metric.
+            dt0: Initial step size. If ``None``, the step size is chosen automatically.
             **kwargs: Additional keyword arguments to pass to ``diffrax.diffeqsolve``.
 
         Returns:
@@ -86,99 +85,55 @@ class Model(eqx.Module, abc.ABC):
             t[-1],
             # discrete_terminating_event=discrete_terminating_event,
             y0=state,
+            dt0=dt0,
             **kwargs,
             saveat=dx.SaveAt(ts=t),
             stepsize_controller=stepsize_controller,
         )
 
-
-class FHNB(Model):
-    r"""FitzHugh-Nagumo + Bacteria. The dynamical variables :math:`(A, R, B)` denote
-    the concentration of antimicrobial peptide, repression, and bacteria, respectively,
-    and satisfy
-
-    .. math::
-        \begin{align*}
-        \partial_t A &=& \nabla^2 A + A (A - \theta) (1 - A) + \eta B - \rho R \\
-        \partial_t R &=& \epsilon (A - R) \\
-        \partial_t B &=& \xi \nabla^2 B + \lambda B (1-B) - \mu A B
-        \end{align*}
-
-    Args:
-        α: Diffusion coefficient of antimicrobial peptide.
-        θ: Threshold for antimicrobial peptide production.
-        η: Rate of antimicrobial peptide growth response to bacteria.
-        ρ: Rate of antimicrobial peptide degradation response to repression.
-        ε: Rate of repression production.
-        ξ: Diffusion coefficient of bacteria.
-        λ: Rate of bacteria growth.
-        μ: Rate of bacteria death response to antimicrobial peptide.
-    """
-    α: float
-    θ: float
-    η: float
-    ρ: float
-    ε: float
-    ξ: float
-    λ: float
-    μ: float
-    n_components: int = 3
-
-    def __call__(
-        self,
-        t: float,
-        state: PyTree[spatial.ScalarField, " n_components"],
-        args: None = None,
-    ) -> PyTree[spatial.ScalarField, " n_components"]:
-        r"""Evaluate the right-hand side of the dynamical equation.
+    def plot(
+        self, state: PyTree[spatial.ScalarField] | dx.Solution, file: str | None = None
+    ) -> None:
+        r"""Plot the state of the system. If the state is a Pytree of fields, plot each
+        field in a separate subplot. If state is a :py:mod:`dx.Solution` object (i.e.,
+        the result of :py:meth:`Model.solve`), plot the solution at each time point.
 
         Args:
-            t: Time (ignored).
-            state: Spatial fields :math:`(A, R, B)`.
-            args: Additional arguments (ignored).
-
-        Returns:
-            :math:`\partial_t A`, :math:`\partial_t R`, :math:`\partial_t B`.
+            state: State of the system. Either a :py:class:`eqx.Module` of
+                   :py:class:`spatial.ScalarField` fields or a :py:mod:`dx.Solution` object.
+            file: If not ``None``, save the figure to this file.
         """
-        A, R, B = spatial._field_leaves(state)
-        dAdt = (
-            self.α * A.laplacian(bc="neumann")
-            + A * (A - self.θ) * (1 - A)
-            + self.η * B
-            - self.ρ * R
+        if isinstance(state, dx.Solution):
+            state = state.ys
+            time_series = True
+        elif isinstance(state, PyTree[spatial.ScalarField]):
+            time_series = False
+        else:
+            raise RuntimeError(
+                f"state must be a Pytree of fields or a dx.Solution object, got {state=}"
+            )
+        labels, fields = zip(
+            *[(field.name, getattr(state, field.name)) for field in dc.fields(state)]
         )
-        dRdt = self.ε * (A - R)
-        dBdt = (
-            self.ξ * B.laplacian(bc="neumann") + self.λ * B * (1 - B) - self.μ * A * B
-        )
-
-        return jtu.build_tree(spatial._field_structure(state), (dAdt, dRdt, dBdt))
-
-    # NOTE: 1d only
-    @staticmethod
-    def boundary_metric(state: PyTree[spatial.ScalarField, " n_components"]) -> float:
-        r"""Maximum antimicrobial peptide concentration on the boundary.
-
-        Args:
-            state: Spatial fields :math:`(A, R, B)`.
-        """
-        A, R, B = state
-        return max(A.values[0], A.values[-1])
-
-
-# def plot(
-#     model: ImmuneResponse,
-#     state: Dict[str, ArrayLike],
-#     axes,
-#     *args,
-#     **kwargs,
-# ) -> None:
-#     r"""Plot the state of the system."""
-#     n_components = len(state)
-#     for i, name in enumerate(state):
-#         axes[i].plot(model.x, state[name], *args, **kwargs)
-#         axes[i].set_ylabel(name)
-#         axes[i].set_xlabel("x")
+        if not all(field.ndim == 1 for field in fields):
+            raise NotImplementedError(
+                "Can only plot 1D fields, got {field.ndim} dimensions"
+            )
+        fig, axes = plt.subplots(len(fields), 1, figsize=(6, 2 * len(fields)))
+        if time_series:
+            for axis, label, field in zip(axes, labels, fields):
+                lines = field.values.T
+                colors = plt.cm.viridis(np.linspace(0, 1, lines.shape[1]))
+                axis.set_prop_cycle("color", colors)
+                axis.plot(field.domain[0], lines)
+                axis.set_ylabel(label)
+        else:
+            for axis, label, field in zip(axes, labels, fields):
+                axis.plot(field.domain[0], field.values)
+                axis.set_ylabel(label)
+        if file is not None:
+            plt.savefig(file)
+        plt.show()
 
 
 # # diffrax.MultiTerm  <--- combines terms

@@ -1,4 +1,4 @@
-r"""Test :mod:`immunowave.spatial`."""
+r"""Test :py:mod:`immunowave.spatial`."""
 
 import jax
 import jax.numpy as jnp
