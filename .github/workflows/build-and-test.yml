@@ -35,4 +35,6 @@ jobs:
           black --check .
 
       - name: Tests
-        run: pytest
+        run: |
+          pytest
+          pytest --nbval notebooks/quickstart.ipynb notebooks/benchmark.ipynb
