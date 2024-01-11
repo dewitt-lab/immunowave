@@ -24,14 +24,15 @@ pip install -e ".[dev]"
 
 Import in your Python code:
 ```python
-import immunowave
+import immunowave as iw
 ```
 
 ## Development
 
 ### Formatting
 
-We use [Black](https://github.com/psf/black) for code formatting. To format your code, run the following command:
+We use [Black](https://github.com/psf/black) for code formatting.
+To format your code, run the following command:
 
 ```
 black .
@@ -39,16 +40,22 @@ black .
 
 ### Linting
 
-We use [Flake8](https://flake8.pycqa.org/en/latest/) for linting. To lint your code, run the following command:
+We use [Flake8](https://flake8.pycqa.org/en/latest/) for linting.
+To lint your code, run the following command:
 ```bash
 flake8 .
 ```
 
 ### Testing
 
-We use [pytest](https://docs.pytest.org/en/latest/) for testing. To run the tests, run the following command:
+We use [pytest](https://docs.pytest.org/en/latest/) for testing.
+To run the tests, run the following command:
 ```bash
 pytest
+```
+To run notebooks as tests, run the following command:
+```bash
+pytest --nbval notebooks/quickstart.ipynb notebooks/benchmark.ipynb
 ```
 
 ## License
