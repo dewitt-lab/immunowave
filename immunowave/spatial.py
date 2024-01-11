@@ -7,8 +7,9 @@ import jax
 import jax.numpy as jnp
 import jax.tree_util as jtu
 from jaxtyping import ArrayLike, Array, Float
-from typing import Callable, Self, Literal
+from typing import Any, Callable, Self, Literal
 from collections.abc import Sequence
+import matplotlib.pyplot as plt
 
 jax.config.update("jax_enable_x64", True)
 
@@ -88,7 +89,8 @@ class ScalarField(eqx.Module):
                 broadcastable to ``shape``.
         fn: Function :math:`f:\mathbb{R}^d\to\mathbb{R}` to discretize (overrides
             ``values``). Callable must accept :py:attr:`ScalarField.ndim`
-            ``float`` arguments and return a scalar ``float``.
+            ``float`` arguments and return a scalar ``float``. It must also be
+            vectorizable with :py:func:`jax.vmap`.
     """
     ndim: int = eqx.field(static=True)
     lb: Float[np.ndarray, "ndim"] = eqx.field(static=True)
@@ -121,9 +123,11 @@ class ScalarField(eqx.Module):
         self.values = jnp.full(shape, values, dtype=float)
         """Values of the discretized function at each grid point."""
         if fn is not None:
-            fn_vmap = jax.vmap(fn, in_axes=tuple(range(self.ndim)))
+            fn_vmap = fn
+            for i in range(self.ndim):
+                fn_vmap = jax.vmap(fn_vmap, in_axes=(i,) * self.ndim)
             domain_meshgrid = jnp.meshgrid(*self.domain, indexing="ij")
-            self.values = fn_vmap(*domain_meshgrid)
+            self.values = jnp.array(fn_vmap(*domain_meshgrid), dtype=float)
 
     @property
     def domain(self) -> tuple[Float[Array, "..."], ...]:
@@ -144,17 +148,17 @@ class ScalarField(eqx.Module):
             eqx.EquinoxTracetimeError: If ``other`` is not aligned.
         """
         eqx.error_if(
-            other,
+            other.values,
             jnp.logical_not(jnp.array_equal(self.lb, other.lb)),
             f"Mismatched bounds {self.lb} and {other.lb}",
         )
         eqx.error_if(
-            other,
+            other.values,
             jnp.logical_not(jnp.array_equal(self.ub, other.ub)),
             f"Mismatched bounds {self.ub} and {other.ub}",
         )
         eqx.error_if(
-            other,
+            other.values,
             jnp.logical_not(jnp.array_equal(self.h, other.h)),
             f"Mismatched spacings {self.h} and {self.h}",
         )
@@ -178,7 +182,7 @@ class ScalarField(eqx.Module):
     def binop(
         self,
         other: Self | Float[Array, "#l #m n"],
-        f: Callable[
+        fn: Callable[
             [Float[Array, "#l #m n"], Float[Array, "#l #m n"]], Float[Array, "#l #m n"]
         ],
     ) -> Self:
@@ -186,7 +190,7 @@ class ScalarField(eqx.Module):
 
         Args:
             other: Another spatially discretized function.
-            f: Pointwise binary operation.
+            fn: Pointwise binary operation.
 
         Returns:
             Discretized function.
@@ -198,7 +202,7 @@ class ScalarField(eqx.Module):
             self.values.shape[-self.ndim :],
             self.lb,
             self.h,
-            values=f(self.values, other),
+            values=fn(self.values, other),
         )
 
     def __add__(self, other):
@@ -253,3 +257,34 @@ class ScalarField(eqx.Module):
         return ScalarField(
             self.values.shape[-self.ndim :], self.lb, self.h, values=laplacian
         )
+
+    def plot(self, time_idx: int | None = None, **kwargs: Any) -> None:
+        r"""Plot the field with Matplotlib.
+
+        Args:
+            time_idx: If ``self`` is  derived from a Diffrax solution with a series of
+                      time points, this index specifies which time index to plot
+            kwargs: Keyword arguments passed to Matplotlib plotting function.
+        """
+        err = ValueError(
+            f"Cannot plot field values with {self.values.ndim} dimensions in "
+            f"{self.ndim} dimensional domain"
+        )
+        if time_idx is None:
+            if self.values.ndim != self.ndim:
+                raise err
+            values = self.values
+        if time_idx is not None:
+            if self.values.ndim != self.ndim + 1:
+                raise err
+            values = self.values[time_idx]
+        if self.ndim == 1:
+            plt.plot(self.domain[0], values, **kwargs)
+        elif self.ndim == 2:
+            if values.ndim != self.ndim:
+                raise NotImplementedError()
+            plt.pcolor(*self.domain, values, **kwargs)
+        else:
+            raise NotImplementedError(
+                f"Plotting not implemented for {self.ndim} dimensions"
+            )

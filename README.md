@@ -24,7 +24,7 @@ pip install -e ".[dev]"
 
 Import in your Python code:
 ```python
-import immunowave
+import immunowave as iw
 ```
 
 ## Development
@@ -55,7 +55,7 @@ pytest
 ```
 To run notebooks as tests, run the following command:
 ```bash
-pytest --nbval notebooks/quickstart.ipynb
+pytest --nbval notebooks/quickstart.ipynb notebooks/benchmark.ipynb
 ```
 
 ## License
