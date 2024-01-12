@@ -55,7 +55,7 @@ pytest
 ```
 To run notebooks as tests, run the following command:
 ```bash
-pytest --nbval notebooks/*.ipynb
+pytest --nbval notebooks/quickstart.ipynb notebooks/benchmark.ipynb
 ```
 
 ## License

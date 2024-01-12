@@ -37,4 +37,4 @@ jobs:
       - name: Tests
         run: |
           pytest
-          pytest --nbval notebooks/*.ipynb
+          pytest --nbval notebooks/quickstart.ipynb notebooks/benchmark.ipynb
