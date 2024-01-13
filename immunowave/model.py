@@ -33,17 +33,8 @@ class Model(eqx.Module, abc.ABC):
             Time derivative of the state.
         """
 
-    # @staticmethod
-    # @abc.abstractmethod
-    # def boundary_metric(state: state.State) -> float:
-    #     r"""Compute a metric on the boundary of the domain.
 
-    #     Args:
-    #         state: State of the system, as :py:class:`eqx.Module` of :py:class:`spatial.ScalarField` fields.
-    #     """
-
-
-# @jax.jit
+@eqx.filter_jit
 def solve(
     model: Model,
     state: state.State,
@@ -53,7 +44,6 @@ def solve(
     t: Float[np.ndarray, " k"] | None = None,
     rtol: float = 1e-8,
     atol: float = 1e-8,
-    boundary_threshold: float = 1e-3,
     **kwargs: Any,
 ) -> dx.Solution:
     r"""Solve the dynamical system.
@@ -68,7 +58,6 @@ def solve(
            returned.
         rtol: Relative tolerance.
         atol: Absolute tolerance.
-        boundary_threshold: Threshold for the boundary metric.
         **kwargs: Additional keyword arguments to pass to ``diffrax.diffeqsolve``.
 
     Returns:
@@ -88,9 +77,6 @@ def solve(
         saveat=dx.SaveAt(ts=t) if t is not None else dx.SaveAt(dense=True),
         # stepsize_controller=dx.PIDController(
         #     pcoeff=0.3, icoeff=0.4, rtol=rtol, atol=atol, dtmax=0.001
-        # ),
-        # discrete_terminating_event=dx.DiscreteTerminatingEvent(
-        #     lambda t, y, args: model.boundary_metric(y) > boundary_threshold
         # ),
         **kwargs,
     )
