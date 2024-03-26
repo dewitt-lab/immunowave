@@ -1,6 +1,6 @@
 # Immunowave
 
-Dynamical models for multi-scale immune responses
+Dynamical models for multiscale immune responses
 
 [![build and test](https://github.com/WSDeWitt/immunowave/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/WSDeWitt/immunowave/actions/workflows/build-and-test.yml)
 
