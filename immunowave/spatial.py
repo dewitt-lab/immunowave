@@ -226,7 +226,7 @@ class ScalarField(eqx.Module):
     def integral(self) -> ArrayLike:
         result = self.values
         for _ in range(self.ndim):
-            result = jnp.trapz(result, dx=self.h)
+            result = jax.scipy.integrate.trapezoid(result, dx=self.h)
         return result
 
     def laplacian(self, bc: Literal["dirichlet", "neumann"] = "dirichlet") -> Self:
