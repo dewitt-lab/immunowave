@@ -1,10 +1,11 @@
 r"""Field states."""
 
+import numpy as np
 import jax
 from numpy.typing import NDArray
 import equinox as eqx
 import abc
-from typing import Any
+from typing import Any, Self
 import matplotlib.pyplot as plt
 import dataclasses
 
@@ -31,6 +32,16 @@ class State(eqx.Module, abc.ABC):
             if i > 0:
                 named_scalar_fields[0][1].check_aligned(scalar_field)
 
+    def map(self, fn: Any) -> Self:
+        r"""Apply a function to each field."""
+        return dataclasses.replace(
+            self,
+            **{
+                field.name: getattr(self, field.name).map(fn)
+                for field in dataclasses.fields(self)
+            },
+        )
+
     def plot(
         self,
         time_idx: int | None = None,
@@ -51,9 +62,11 @@ class State(eqx.Module, abc.ABC):
         ]
         if axes is None:
             fig, axes = plt.subplots(
-                len(named_scalar_fields), 1, figsize=(6, 2 * len(named_scalar_fields))
+                len(named_scalar_fields),
+                1,
+                figsize=(6, 2 * len(named_scalar_fields)),
             )
-        for axis, (name, scalar_field) in zip(axes, named_scalar_fields):
+        for axis, (name, scalar_field) in zip(np.atleast_1d(axes), named_scalar_fields):
             plt.sca(axis)
             scalar_field.plot(time_idx=time_idx, **kwargs)
             axis.set_title(name)

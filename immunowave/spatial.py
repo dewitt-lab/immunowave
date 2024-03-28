@@ -92,6 +92,7 @@ class ScalarField(eqx.Module):
             ``float`` arguments and return a scalar ``float``. It must also be
             vectorizable with :py:func:`jax.vmap`.
     """
+
     ndim: int = eqx.field(static=True)
     lb: Float[np.ndarray, "ndim"] = eqx.field(static=True)
     ub: Float[np.ndarray, "ndim"] = eqx.field(static=True)
@@ -166,18 +167,31 @@ class ScalarField(eqx.Module):
     def __pos__(self) -> Self:
         return self
 
-    def __neg__(self) -> Self:
+    def map(self, fn):
         return ScalarField(
-            self.values.shape[-self.ndim :], self.lb, self.h, values=-self.values
+            self.values.shape[-self.ndim :], self.lb, self.h, values=fn(self.values)
         )
 
+    def __neg__(self) -> Self:
+        return self.map(jnp.negative)
+
     def __abs__(self) -> Self:
-        return ScalarField(
-            self.values.shape[-self.ndim :],
-            self.lb,
-            self.h,
-            values=jnp.abs(self.values),
-        )
+        return self.map(jnp.abs)
+
+    def exp(self) -> Self:
+        return self.map(jnp.exp)
+
+    def log(self) -> Self:
+        return self.map(jnp.log)
+
+    def __pow__(self, power: float) -> Self:
+        return self.map(lambda x: x**power)
+
+    def __rpow__(self, base: float) -> Self:
+        return self.map(lambda x: base**x)
+
+    def hill(self, k: float, n: float) -> Self:
+        return self.map(lambda x: x**n / (k**n + x**n))
 
     def binop(
         self,
@@ -208,20 +222,26 @@ class ScalarField(eqx.Module):
     def __add__(self, other):
         return self.binop(other, jnp.add)
 
+    def __radd__(self, other):
+        return self + other
+
+    def __sub__(self, other):
+        return self + -other
+
+    def __rsub__(self, other):
+        return -self + other
+
     def __mul__(self, other):
         return self.binop(other, jnp.multiply)
 
-    def __radd__(self, other):
-        return self.binop(other, jnp.add)
-
     def __rmul__(self, other):
-        return self.binop(other, jnp.multiply)
+        return self * other
 
-    def __sub__(self, other):
-        return self.binop(other, jnp.subtract)
+    def __truediv__(self, other):
+        return self.binop(other, jnp.divide)
 
-    def __rsub__(self, other):
-        return self.binop(other, lambda x, y: jnp.subtract(y, x))
+    def __rtruediv__(self, other):
+        return other / self
 
     def integral(self) -> ArrayLike:
         result = self.values

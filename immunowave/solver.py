@@ -18,6 +18,7 @@ class SpatialPDETerm(dx.AbstractTerm):
     ``vector_field`` should return some PyTree, with the same structure as the initial
     state ``y0``, and with every leaf broadcastable to the equivalent leaf in ``y0``.
     """
+
     vector_field: Callable[[Scalar, state.State, PyTree], state.State]
 
     def vf(self, t: Scalar, y: state.State, args: PyTree) -> state.State:

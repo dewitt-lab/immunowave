@@ -41,7 +41,6 @@ def solve(
     t0: float,
     t1: float,
     dt0: float | None = None,
-    t: Float[np.ndarray, " k"] | None = None,
     rtol: float = 1e-8,
     atol: float = 1e-8,
     **kwargs: Any,
@@ -54,33 +53,23 @@ def solve(
         t0: The start of the region of integration.
         t1: The end of the region of integration.
         dt0: Initial step size. If ``None``, the step size is chosen automatically.
-        t: Time points at which to save the solution. If ``None``, dense output is
-           returned.
         rtol: Relative tolerance.
         atol: Absolute tolerance.
         **kwargs: Additional keyword arguments to pass to ``diffrax.diffeqsolve``.
 
     Returns:
-        Solution. If ``t`` is ``None``, the solution can evaluated densely via the
-        ``evaluate()`` method. Otherwise, the solution at the time points ``t`` is
-        accessible via the ``ys`` attribute.
+        Solution.
     """
+    if "stepsize_controller" not in kwargs:
+        kwargs["stepsize_controller"] = dx.PIDController(
+            pcoeff=0.3, icoeff=0.4, rtol=rtol, atol=atol, dtmax=0.001
+        )
     return dx.diffeqsolve(
         solver.SpatialPDETerm(model),
-        # dx.ODETerm(model),
         solver.CrankNicolson(rtol, atol),
-        # dx.Tsit5(),
         t0,
         t1,
         dt0,
         state,
-        saveat=dx.SaveAt(ts=t) if t is not None else dx.SaveAt(dense=True),
-        # stepsize_controller=dx.PIDController(
-        #     pcoeff=0.3, icoeff=0.4, rtol=rtol, atol=atol, dtmax=0.001
-        # ),
         **kwargs,
     )
-
-
-# # diffrax.MultiTerm  <--- combines terms
-# # diffrax events <--- maybe good for convergence issues
