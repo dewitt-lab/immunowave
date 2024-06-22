@@ -83,7 +83,6 @@ def tissue_response(B0, KD, t_max, shape, lb, h, L, hill_coefficient=2, D=1, gam
         state,
         t0=0,
         t1=t_max,
-        t=jnp.array([t_max]),
         **kwargs,
     )
     
@@ -106,7 +105,6 @@ def single_cell_response(B0, KD, t_max, shape, lb, h, L, hill_coefficient=2, gam
         state,
         t0=0,
         t1=t_max,
-        t=jnp.array([t_max]),
         **kwargs,
     )
         
