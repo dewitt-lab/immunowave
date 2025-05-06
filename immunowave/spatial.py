@@ -93,8 +93,8 @@ class ScalarField(eqx.Module):
     """
 
     ndim: int = eqx.field(static=True)
-    lb: Float[np.ndarray, "ndim"] = eqx.field(static=True)
-    ub: Float[np.ndarray, "ndim"] = eqx.field(static=True)
+    lb: Float[list, "ndim"] = eqx.field(static=True)
+    ub: Float[list, "ndim"] = eqx.field(static=True)
     h: float = eqx.field(static=True)
     values: Float[Array, "#l #m n"]
 
@@ -108,7 +108,7 @@ class ScalarField(eqx.Module):
         #       Callable[[Float[Array, " ndim"], ...], float]
         fn: NDFn | None = None,
     ) -> None:
-        self.lb = np.array(lb, dtype=float)
+        self.lb = [float(x) for x in lb]
         """Lower bounds of domain."""
         self.ndim = len(self.lb)
         """Number of dimensions."""
@@ -116,9 +116,9 @@ class ScalarField(eqx.Module):
             raise NotImplementedError(
                 f"ScalarField only supports 1D, 2D, and 3D fields, got {self.ndim=}"
             )
-        self.h = h
+        self.h = float(h)
         """Grid spacing."""
-        self.ub = self.lb + self.h * (np.array(shape, dtype=float) - 1)
+        self.ub = [float(x) for x in np.asarray(self.lb + self.h * (np.array(shape, dtype=float) - 1))]
         """Upper bounds of domain."""
         self.values = jnp.full(shape, values, dtype=float)
         """Values of the discretized function at each grid point."""

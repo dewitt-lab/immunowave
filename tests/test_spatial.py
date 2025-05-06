@@ -23,7 +23,7 @@ def test_scalar_field(d: int, shape: int | Sequence[int], lb, h):
     r"""Test :class:`immunowave.spatial.ScalarField`."""
     values = np.random.standard_normal(shape)
     field = spatial.ScalarField(shape, lb, h, values=values)
-    assert (field.lb.squeeze() == lb).all()
+    assert field.lb == lb
     assert field.h == h
     np.broadcast_shapes(field.values.shape, shape)
     assert field.values.dtype == jnp.float64
@@ -34,7 +34,7 @@ def test_scalar_field(d: int, shape: int | Sequence[int], lb, h):
 def test_scalar_field_from_fn(d, shape, lb, h):
     r"""Test :class:`immunowave.spatial.ScalarField`."""
     field = spatial.ScalarField(shape, lb, h, fn=lambda *x: sum(xi**2 for xi in x))
-    assert (field.lb.squeeze() == lb).all()
+    assert field.lb == lb
     assert field.h == h
     np.broadcast_shapes(field.values.shape, shape)
     assert field.values.dtype == jnp.float64
