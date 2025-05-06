@@ -118,7 +118,10 @@ class ScalarField(eqx.Module):
             )
         self.h = float(h)
         """Grid spacing."""
-        self.ub = [float(x) for x in np.asarray(self.lb + self.h * (np.array(shape, dtype=float) - 1))]
+        self.ub = [
+            float(x)
+            for x in np.asarray(self.lb + self.h * (np.array(shape, dtype=float) - 1))
+        ]
         """Upper bounds of domain."""
         self.values = jnp.full(shape, values, dtype=float)
         """Values of the discretized function at each grid point."""
