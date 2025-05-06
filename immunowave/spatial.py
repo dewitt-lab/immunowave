@@ -1,5 +1,4 @@
-r"""Discretization of a spatial domain.
-"""
+r"""Discretization of a spatial domain."""
 
 import numpy as np
 import equinox as eqx
