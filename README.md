@@ -4,6 +4,9 @@ Dynamical models for multiscale immune responses
 
 [![build and test](https://github.com/WSDeWitt/immunowave/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/WSDeWitt/immunowave/actions/workflows/build-and-test.yml)
 
+>[!NOTE]
+> Documentation is available at https://dewitt-lab.github.io/immunowave/index.html
+
 ## Installation
 
 ### Standard user

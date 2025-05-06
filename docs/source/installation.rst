@@ -13,4 +13,4 @@ Or for development:
 
    git clone https://github.com/dewitt-lab/immunowave.git
    cd immunowave
-   pip install -e .
+   pip install -e ".[dev]"
