@@ -50,6 +50,11 @@ dev = [
   "jupyter",
   "seaborn",
   "beartype",
+  "sphinx",
+  "sphinx-rtd-theme",
+  "myst-parser",
+  "sphinxcontrib-napoleon",
+  "nbsphinx",
 ]
 
 [tool.hatch.version]
