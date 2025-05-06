@@ -1,8 +1,11 @@
+[![build and test](https://github.com/WSDeWitt/immunowave/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/WSDeWitt/immunowave/actions/workflows/build-and-test.yml)
+
+[![pages-build-deployment](https://github.com/dewitt-lab/immunowave/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/dewitt-lab/immunowave/actions/workflows/pages/pages-build-deployment)
+
+
 # Immunowave
 
-Dynamical models for multiscale immune responses
-
-[![build and test](https://github.com/WSDeWitt/immunowave/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/WSDeWitt/immunowave/actions/workflows/build-and-test.yml)
+Dynamical models for immune trigger waves
 
 >[!NOTE]
 > Documentation is available at https://dewitt-lab.github.io/immunowave/index.html
