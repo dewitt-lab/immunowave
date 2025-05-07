@@ -6,6 +6,6 @@ API Reference
    :caption: API Documentation
 
    model
-   solver
    spatial
    state
+   solver
