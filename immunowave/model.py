@@ -26,7 +26,7 @@ class Model(eqx.Module, abc.ABC):
 
         Args:
             t: Time.
-            state: State of the system, as :py:class:`eqx.Module` of :py:class:`spatial.ScalarField` fields.
+            state: State of the system, as :py:class:`eqx.Module` of :py:class:`immunowave.spatial.ScalarField` fields.
             args: Additional arguments.
 
         Returns:
@@ -49,7 +49,7 @@ def solve(
 
     Args:
         model: Immune respone model.
-        state: Initial condition, as :py:class:`eqx.Module` of :py:class:`spatial.ScalarField` fields.
+        state: Initial condition, as :py:class:`eqx.Module` of :py:class:`immunowave.spatial.ScalarField` fields.
         t0: The start of the region of integration.
         t1: The end of the region of integration.
         dt0: Initial step size. If ``None``, the step size is chosen automatically.
