@@ -8,7 +8,7 @@
 Dynamical models for immune trigger waves
 
 >[!NOTE]
-> Documentation is available at https://dewitt-lab.github.io/immunowave/index.html
+> Documentation is available at https://dewitt-lab.github.io/immunowave/
 
 ## Installation
 
