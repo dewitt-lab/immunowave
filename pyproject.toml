@@ -9,10 +9,10 @@ allow-direct-references = true
 [project]
 name = "Immunowave"
 authors = [
-  { name="William DeWitt", email="wsdewitt@gmail.com" },
-  { name="Brandon Schlomann", email="bhschlomann@gmail.com" },
-  { name="Kasturi Shah", email="ks7@mit.edu" },
-  { name="Yuanzhao Zhang", email="zhangyuanzhao45@gmail.com" },
+  { name="William DeWitt"},
+  { name="Brandon Schlomann"},
+  { name="Kasturi Shah"},
+  { name="Yuanzhao Zhang"},
 ]
 description = "Dynamical models for multi-scale immune responses"
 readme = "README.md"
