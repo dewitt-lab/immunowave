@@ -1,6 +1,4 @@
-[![build and test](https://github.com/WSDeWitt/immunowave/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/WSDeWitt/immunowave/actions/workflows/build-and-test.yml)
-
-[![pages-build-deployment](https://github.com/dewitt-lab/immunowave/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/dewitt-lab/immunowave/actions/workflows/pages/pages-build-deployment)
+[![build and test](https://github.com/WSDeWitt/immunowave/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/WSDeWitt/immunowave/actions/workflows/build-and-test.yml) [![pages-build-deployment](https://github.com/dewitt-lab/immunowave/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/dewitt-lab/immunowave/actions/workflows/pages/pages-build-deployment)
 
 
 # Immunowave
