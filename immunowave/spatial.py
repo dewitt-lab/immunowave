@@ -192,8 +192,8 @@ class ScalarField(eqx.Module):
     def __rpow__(self, base: float) -> Self:
         return self.map(lambda x: base**x)
 
-    def hill(self, k: float, n: float) -> Self:
-        return self.map(lambda x: x**n / (k**n + x**n))
+    def hill(self, K: float, n: float) -> Self:
+        return self.map(lambda x: x**n / (K**n + x**n))
 
     def binop(
         self,
