@@ -40,7 +40,7 @@ class HillModel(iw.Model):
         )
         # define PDE
         An = A.binop(n, jnp.power)
-        tmp = An + KD**n
+        tmp = An + KD ** n
         tmp = tmp.binop(-1, jnp.power)
         hill_term = An * tmp
         dAdt = D * A.laplacian(bc="neumann") + hill_term - gamma * A + η * B
@@ -60,14 +60,7 @@ def response(B0, KD, t_max, hill_coefficient=2):
             fn=lambda x: B0 * jax.scipy.stats.norm.pdf(x, loc=L / 2, scale=1),
         ),
     )
-    solution = iw.solve(
-        model,
-        state,
-        t0=0,
-        t1=t_max,
-        t=jnp.array([t_max]),
-        **kwargs,
-    )
+    solution = iw.solve(model, state, t0=0, t1=t_max, t=jnp.array([t_max]), **kwargs,)
     return np.sum(solution.ys.A.values[-1] * solution.ys.A.h)
     # return solution.evaluate(t_final).A.integral() / L
 
@@ -108,13 +101,7 @@ def tissue_response(
         #    shape, lb, h, fn=lambda x: B0 * jax.scipy.stats.norm.pdf(x, loc=0, scale=0.5)
         # ),
     )
-    solution = iw.solve(
-        model,
-        state,
-        t0=0,
-        t1=t_max,
-        **kwargs,
-    )
+    solution = iw.solve(model, state, t0=0, t1=t_max, **kwargs,)
 
     tissue_response = np.sum(solution.ys.A.values[-1] * solution.ys.A.h)
 
@@ -134,13 +121,7 @@ def single_cell_response(
             (1,), lb, 1, fn=lambda x: B0 * jnp.array(x == 0).astype("float")
         ),
     )
-    solution = iw.solve(
-        model,
-        state,
-        t0=0,
-        t1=t_max,
-        **kwargs,
-    )
+    solution = iw.solve(model, state, t0=0, t1=t_max, **kwargs,)
 
     single_cell_response = solution.ys.A.values[-1, int(L // 2)]
 

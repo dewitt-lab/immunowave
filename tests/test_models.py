@@ -30,7 +30,7 @@ class TestModel(model.Model):
 
     def __call__(self, t, state, args=None):
         u, v = state.u, state.v
-        dudt = self.D * u.laplacian() + u - u**3 - v
+        dudt = self.D * u.laplacian() + u - u ** 3 - v
         dvdt = self.a * u - self.b * v + self.c
         return TestState(dudt, dvdt)
 
@@ -91,7 +91,7 @@ def test_model_differentiation(shape, lb, h):
     def loss_fn(model_instance):
         derivatives = model_instance(0.0, test_state, None)
         # Sum of squared derivatives as a simple loss
-        return jnp.sum(derivatives.u.values**2) + jnp.sum(derivatives.v.values**2)
+        return jnp.sum(derivatives.u.values ** 2) + jnp.sum(derivatives.v.values ** 2)
 
     # Compute gradient with respect to the model
     grad_fn = jax.grad(loss_fn)

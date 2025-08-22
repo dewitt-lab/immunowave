@@ -62,9 +62,7 @@ class State(eqx.Module, abc.ABC):
         ]
         if axes is None:
             fig, axes = plt.subplots(
-                len(named_scalar_fields),
-                1,
-                figsize=(6, 2 * len(named_scalar_fields)),
+                len(named_scalar_fields), 1, figsize=(6, 2 * len(named_scalar_fields)),
             )
         for axis, (name, scalar_field) in zip(np.atleast_1d(axes), named_scalar_fields):
             plt.sca(axis)
