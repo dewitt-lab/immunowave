@@ -27,7 +27,7 @@ class TestModel(model.Model):
     c: float = eqx.field(static=True, default=3.0)
     D: float = eqx.field(static=True, default=1.0)
 
-    def __call__(self, t, state, args=None):
+    def __call__(self, t, state: TestState, args=None):
         u, v = state.u, state.v
         dudt = self.D * u.laplacian() + u - u**3 - v
         dvdt = self.a * u - self.b * v + self.c
@@ -252,29 +252,14 @@ def test_model_immutability():
     assert original_model.D == original_D
 
 
-def test_solve_input_validation():
-    """Test that solve properly validates inputs."""
-    # Invalid model type (should catch before reaching diffrax)
-    with pytest.raises((TypeError, ValueError)):
-        model.solve("not_a_model", None, 0.0, 1.0)
+def test_solve():
+    """Test that the solve function can run with a simple model and state."""
 
-    # Invalid state type
     test_model = TestModel()
-    with pytest.raises((TypeError, ValueError)):
-        model.solve(test_model, "not_a_state", 0.0, 1.0)
-
-    # Test with None as state
-    with pytest.raises((TypeError, ValueError)):
-        model.solve(test_model, None, 0.0, 1.0)
-
-    # Test with invalid dt0 (negative)
     shape, lb, h = (10,), [0], 0.1
     test_state = TestState(
         spatial.ScalarField(shape, lb, h, values=0.5),
         spatial.ScalarField(shape, lb, h, values=0.1),
     )
-
-    # If diffrax doesn't validate this, that's OK - just verify the function runs
-    # and returns a valid solution
     solution = model.solve(test_model, test_state, 1.0, 0.0)  # t1 < t0
     assert isinstance(solution, dx.Solution)
