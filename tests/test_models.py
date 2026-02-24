@@ -9,7 +9,6 @@ import diffrax as dx
 
 from immunowave import model, spatial, state
 
-
 # Configure JAX to use 64-bit precision
 jax.config.update("jax_enable_x64", True)
 
