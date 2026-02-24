@@ -66,13 +66,12 @@ path = "immunowave/__init__.py"
 "Documentation" = "https://wsdewitt.github.io/immunowave"
 
 [tool.black]
-include = '''
-/(
-    | immunowave
-    | tests
-    | notebooks
-)/
+exclude = '''
+(
+  notebooks | docs/build
+)
 '''
+
 
 
 # [tool.pytest.ini_options]

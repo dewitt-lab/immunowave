@@ -22,9 +22,21 @@ laplacian_kernel_2d = np.array([[1, 2, 1], [2, -12, 2], [1, 2, 1]]) / 4
 laplacian_kernel_3d = (
     np.array(
         [
-            [[2, 3, 2], [3, 6, 3], [2, 3, 2],],
-            [[3, 6, 3], [6, -88, 6], [3, 6, 3],],
-            [[2, 3, 2], [3, 6, 3], [2, 3, 2],],
+            [
+                [2, 3, 2],
+                [3, 6, 3],
+                [2, 3, 2],
+            ],
+            [
+                [3, 6, 3],
+                [6, -88, 6],
+                [3, 6, 3],
+            ],
+            [
+                [2, 3, 2],
+                [3, 6, 3],
+                [2, 3, 2],
+            ],
         ]
     )
     / 26
@@ -175,13 +187,13 @@ class ScalarField(eqx.Module):
         return self.map(jnp.log)
 
     def __pow__(self, power: float) -> Self:
-        return self.map(lambda x: x ** power)
+        return self.map(lambda x: x**power)
 
     def __rpow__(self, base: float) -> Self:
-        return self.map(lambda x: base ** x)
+        return self.map(lambda x: base**x)
 
     def hill(self, K: float, n: float) -> Self:
-        return self.map(lambda x: x ** n / (K ** n + x ** n))
+        return self.map(lambda x: x**n / (K**n + x**n))
 
     def binop(
         self,
@@ -262,7 +274,7 @@ class ScalarField(eqx.Module):
         laplacian = jax.scipy.signal.convolve(
             f_extended, _laplacian_kernels[self.ndim - 1], mode="valid", method="auto"
         )
-        laplacian /= self.h ** 2
+        laplacian /= self.h**2
 
         return ScalarField(
             self.values.shape[-self.ndim :], self.lb, self.h, values=laplacian

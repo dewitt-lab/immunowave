@@ -102,7 +102,7 @@ def test_state_map():
     assert jnp.allclose(doubled_state.v.values, 4.0)
 
     # Test with more complex function
-    squared_state = test_state.map(lambda x: x ** 2)
+    squared_state = test_state.map(lambda x: x**2)
     assert jnp.allclose(squared_state.u.values, 1.0)  # 1² = 1
     assert jnp.allclose(squared_state.v.values, 4.0)  # 2² = 4
 
